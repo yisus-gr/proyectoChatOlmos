@@ -73,9 +73,8 @@ public class Home extends javax.swing.JFrame {
     
     private void cerrarSocket() {
         try {
-            if (socket != null && !socket.isClosed()) {
-                String mensajeDesconexion = "p^" + alias + "^";
-            salidaCliente.writeUTF(mensajeDesconexion);
+            if (socket != null && !socket.isClosed()) {     
+            salidaCliente.writeUTF("DESCONECTAR");
                 socket.close();
             }
         } catch (IOException e) {
