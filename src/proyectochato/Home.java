@@ -6,6 +6,8 @@ package proyectochato;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
@@ -29,6 +31,13 @@ public class Home extends javax.swing.JFrame {
      * Creates new form Home
      */
     public Home() {
+        addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                cerrarSocket();
+            }
+        });
+        
+        
         
         try{
             socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
@@ -61,6 +70,18 @@ public class Home extends javax.swing.JFrame {
         } 
         initComponents();
     }
+    
+    private void cerrarSocket() {
+        try {
+            if (socket != null && !socket.isClosed()) {
+                String mensajeDesconexion = "p^" + alias + "^";
+            salidaCliente.writeUTF(mensajeDesconexion);
+                socket.close();
+            }
+        } catch (IOException e) {
+            mostrarMensaje("Error al cerrar el socket: " + e.getMessage());
+            }
+        }
     
     public void setAlias(String name){
         this.alias = name;
