@@ -74,17 +74,16 @@ public class Home extends javax.swing.JFrame {
                     try {
                         while (true) {
                             String mensaje = entradaServidor.readUTF();
-                            if (mensaje.charAt(0) == 'm'){
+                            if (mensaje.charAt(0) == 'm' || mensaje.charAt(0) == 'p'){
                                 mostrarMensaje(mensaje);
                             } else { // si el mensaje no empieza con m, entonces es una lista de usuarios
                                 listaUsuarios = mensaje.split(",");
                                 jComboBox1.removeAllItems();
                                 jComboBox1.addItem("Chat Principal");
                                 for (String usuario : listaUsuarios) {
-                                    if(usuario.equals(alias)){
-                                        
+                                    if(!usuario.equals(alias)){
+                                       jComboBox1.addItem(usuario); 
                                     }
-                                    jComboBox1.addItem(usuario);
                                 }
                                 mostrarMensaje(mensaje);
                             }
@@ -136,13 +135,26 @@ public class Home extends javax.swing.JFrame {
     private void enviarMensaje() {
         String mensajeUsuario = txtfMessage.getText();
         if (!mensajeUsuario.isEmpty()) {
-            try {
-                String mensaje = "m^" + alias + "@" + socket.getLocalAddress().getHostAddress() + "^-^" + mensajeUsuario + "^";
-                //String mensaje = "m^" + alias + "^-^" + mensajeUsuario + "^";
-                salidaCliente.writeUTF(mensaje);
-                txtfMessage.setText("");
-            } catch (IOException e) {
-                mostrarMensaje("Error al enviar mensaje al servidor: " + e.getMessage());
+            if(jComboBox1.getSelectedIndex()==0){
+                try {
+                    String mensaje = "m^" + alias + "@" + socket.getLocalAddress().getHostAddress() + "^-^" + mensajeUsuario + "^";
+                    //String mensaje = "m^" + alias + "^-^" + mensajeUsuario + "^";
+                    salidaCliente.writeUTF(mensaje);
+                    txtfMessage.setText("");
+                    } catch (IOException e) {
+                        mostrarMensaje("Error al enviar mensaje al servidor: " + e.getMessage());
+                    }
+            } else{
+                try{
+                    String mensaje = "p^" + alias + "^" + jComboBox1.getSelectedItem().toString() + "^" + mensajeUsuario;
+                    salidaCliente.writeUTF(mensaje);
+                    txtfMessage.setText("");
+                    mostrarMensaje(mensaje);
+                } catch(IOException e){
+                    mostrarMensaje("Error al enviar mensaje al servidor: " + e.getMessage());
+                }
+                
+                
             }
         }
     }
@@ -194,6 +206,11 @@ public class Home extends javax.swing.JFrame {
         jLabel2.setText("jLabel2");
 
         jComboBox1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Chat Principal" }));
+        jComboBox1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jComboBox1ActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -259,6 +276,10 @@ public class Home extends javax.swing.JFrame {
             
         
     }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void jComboBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox1ActionPerformed
+        txtaConversation.setText("");
+    }//GEN-LAST:event_jComboBox1ActionPerformed
 
     /**
      * @param args the command line arguments
