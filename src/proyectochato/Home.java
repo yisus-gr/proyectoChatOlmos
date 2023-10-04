@@ -11,6 +11,7 @@ import java.awt.event.WindowEvent;
 import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
+import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
@@ -75,7 +76,22 @@ public class Home extends javax.swing.JFrame {
                         while (true) {
                             String mensaje = entradaServidor.readUTF();
                             if (mensaje.charAt(0) == 'm' || mensaje.charAt(0) == 'p'){
-                                mostrarMensaje(mensaje);
+                                
+                                if(mensaje.charAt(0) == 'p'){
+                                    StringTokenizer st = new StringTokenizer(mensaje, "^");
+                                    String command = st.nextToken();
+                                    String aliasR = st.nextToken();
+                                    //Para que solo muestre el mensaje si esta en la conversacion
+                                    if(jComboBox1.getSelectedItem().toString().equals(aliasR)){
+                                        mostrarMensaje(mensaje);
+                                    }
+                                } else{
+                                    if(jComboBox1.getSelectedIndex()==0){
+                                        mostrarMensaje(mensaje);
+                                    }
+                                }
+                                
+                                
                             } else { // si el mensaje no empieza con m, entonces es una lista de usuarios
                                 listaUsuarios = mensaje.split(",");
                                 jComboBox1.removeAllItems();
