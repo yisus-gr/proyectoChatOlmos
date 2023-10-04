@@ -28,7 +28,7 @@ public class Home extends javax.swing.JFrame {
     private String alias;
     private static final String SERVER_ADDRESS = "localhost";
     private static final int SERVER_PORT = 2099;
-
+   
     private Socket socket;
     private DataInputStream entradaServidor;
     private DataOutputStream salidaCliente;
@@ -36,6 +36,19 @@ public class Home extends javax.swing.JFrame {
     /**
      * Creates new form Home
      */
+    
+    public void setAlias(String name){
+        this.alias = name;
+        jLabel1.setText(name);
+        setTitle(name);
+        enviarAliasAlServidor(alias);
+    }
+    public String getAlias(){
+        return this.alias;
+    }
+    
+    
+    
     public Home() {
         try {
             UIManager.setLookAndFeel(getSystemLookAndFeelClassName());
@@ -54,15 +67,7 @@ public class Home extends javax.swing.JFrame {
             socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
             entradaServidor = new DataInputStream(socket.getInputStream());
             salidaCliente = new DataOutputStream(socket.getOutputStream());
-            
-            /*
-            btnEnviar.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    enviarMensaje();
-                }
-            });
-            */
-            
+                       
             Thread recibirMensajes = new Thread(new Runnable() {
                 public void run() {
                     try {
@@ -82,6 +87,15 @@ public class Home extends javax.swing.JFrame {
         initComponents();
     }
     
+    private void enviarAliasAlServidor(String alias) {
+        try {
+            salidaCliente.writeUTF(alias);
+        } catch (IOException e) {
+            mostrarMensaje("Error al enviar el alias al servidor: " + e.getMessage());
+        }
+    }
+
+    
     private void cerrarSocket() {
         try {
             if (socket != null && !socket.isClosed()) {     
@@ -91,16 +105,9 @@ public class Home extends javax.swing.JFrame {
         } catch (IOException e) {
             mostrarMensaje("Error al cerrar el socket: " + e.getMessage());
             }
-        }
+    }
     
-    public void setAlias(String name){
-        this.alias = name;
-        jLabel1.setText(name);
-        setTitle(name);
-    }
-    public String getAlias(){
-        return this.alias;
-    }
+    
     
     private void mostrarMensaje(String mensaje) {
         SwingUtilities.invokeLater(new Runnable() {
@@ -185,7 +192,6 @@ public class Home extends javax.swing.JFrame {
                                 .addGap(18, 18, 18)
                                 .addComponent(jButton1)
                                 .addGap(23, 23, 23)))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(btnEnviar, javax.swing.GroupLayout.PREFERRED_SIZE, 1, Short.MAX_VALUE)
                             .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
