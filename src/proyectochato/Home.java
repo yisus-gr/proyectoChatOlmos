@@ -75,6 +75,13 @@ public class Home extends javax.swing.JFrame {
                     try {
                         while (true) {
                             String mensaje = entradaServidor.readUTF();
+                            if(mensaje.startsWith("f^")){
+                                String nombreEmisor = entradaServidor.readUTF();
+                                String nombreArchivo = entradaServidor.readUTF();
+                                long tamanoArchivo = entradaServidor.readLong();
+                                recibirArchivo(nombreEmisor, nombreArchivo, tamanoArchivo);
+                                
+                            }
                             if (mensaje.charAt(0) == 'm' || mensaje.charAt(0) == 'p'){
                                 
                                 if(mensaje.charAt(0) == 'p'){
@@ -102,12 +109,7 @@ public class Home extends javax.swing.JFrame {
                                     }
                                 }
                                 mostrarMensaje(mensaje);
-                            } else{
-                                if (mensaje.startsWith("f^")) {
-                                    recibirArchivo(mensaje);
-                                }
-                                mostrarMensaje(mensaje);
-                            }
+                            } 
                             
                         }
                     } catch (IOException e) {
@@ -190,18 +192,15 @@ public class Home extends javax.swing.JFrame {
         }
     }
     
-    private void recibirArchivo(String msg) throws FileNotFoundException, IOException{
+    private void recibirArchivo( String nombreEmisor, String nombreArchivo, long tamanoArchivo) throws FileNotFoundException, IOException{
         System.out.println("ENTRA a transferencia en Cliente");
-
-        String nombreEmisor = entradaServidor.readUTF();
-        String nombreArchivo = entradaServidor.readUTF();
-        long tamanoArchivo = entradaServidor.readLong();
+      
         
         JFileChooser selectorCarpeta = new JFileChooser();
         selectorCarpeta.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         if(selectorCarpeta.showOpenDialog(this) == JFileChooser.APPROVE_OPTION){
-            
-            try (FileOutputStream fileOutputStream = new FileOutputStream(selectorCarpeta.getCurrentDirectory())) {
+            File archivo = new File(selectorCarpeta.getSelectedFile().getAbsolutePath() + "/" + nombreArchivo);
+            try (FileOutputStream fileOutputStream = new FileOutputStream(archivo)) {
                 byte[] buffer = new byte[4096]; // Tamaño del búfer (4 KB)
                 int bytesRead;
                 long bytesRecibidos = 0;
@@ -211,7 +210,8 @@ public class Home extends javax.swing.JFrame {
                 }
 
                 // Notifica al usuario que se ha recibido el archivo
-                System.out.println("Archivo recibido de " + nombreEmisor + ": " + nombreArchivo);
+                mostrarMensaje("Archivo recibido de " + nombreEmisor + ": " + archivo.getAbsolutePath());
+                System.out.println("Archivo recibido de " + nombreEmisor + ": " + archivo.getAbsolutePath());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -229,7 +229,7 @@ public class Home extends javax.swing.JFrame {
             byte[] buffer = new byte[4096]; // Tamaño del búfer (4 KB)
             System.out.println("Comienzo envio de archivo...");
             // Envía la señal de inicio de transferencia de archivo
-            salidaCliente.writeUTF("f^"); 
+            salidaCliente.writeUTF("f"); 
             salidaCliente.writeUTF(aliasDestino); // Envía el nombre del receptor
             salidaCliente.writeUTF(aliasRemitente); 
             salidaCliente.writeUTF(archivo.getName()); // Envía el nombre del archivo
