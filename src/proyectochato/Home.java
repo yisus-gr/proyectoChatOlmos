@@ -41,7 +41,6 @@ public class Home extends javax.swing.JFrame {
     
     public void setAlias(String name){
         this.alias = name;
-        jLabel1.setText(name);
         setTitle(name);
         enviarAliasAlServidor(alias);
     }
@@ -75,25 +74,29 @@ public class Home extends javax.swing.JFrame {
                     try {
                         while (true) {
                             String mensaje = entradaServidor.readUTF();
-                            if(mensaje.startsWith("f^")){
+                            
+                            //Condiciones para identificar tipo de mensajes
+                            
+                            if(mensaje.startsWith("f^")){ //archivos
                                 String nombreEmisor = entradaServidor.readUTF();
                                 String nombreArchivo = entradaServidor.readUTF();
                                 long tamanoArchivo = entradaServidor.readLong();
                                 recibirArchivo(nombreEmisor, nombreArchivo, tamanoArchivo);
                                 
-                            }
-                            if (mensaje.startsWith("m^")|| mensaje.startsWith("p^")){
+                            } else if (mensaje.startsWith("m^")|| mensaje.startsWith("p^")){
                                 
+                                //Mensajes privados
                                 if(mensaje.charAt(0) == 'p'){
                                     StringTokenizer st = new StringTokenizer(mensaje, "^");
                                     String command = st.nextToken();
                                     String aliasR = st.nextToken();
-                                    
+                                    String aliasD = st.nextToken();
+                                    String msg = st.nextToken();
                                     //Para que solo muestre el mensaje si esta en la conversacion
                                     if(jComboBox1.getSelectedItem().toString().equals(aliasR)){
-                                        mostrarMensaje(mensaje);
+                                        mostrarMensaje(aliasR + ": " + msg);
                                     }
-                                } else{
+                                } else{ //Chat general
                                     if(jComboBox1.getSelectedIndex()==0){
                                         mostrarMensaje(mensaje);
                                     }
@@ -101,6 +104,7 @@ public class Home extends javax.swing.JFrame {
                                 
                                 
                             } else if(mensaje.split(",").length > 0) { // si el mensaje no empieza con m, entonces es una lista de usuarios
+                                //Actualiza lista de usuarios en el comboBox
                                 listaUsuarios = mensaje.split(",");
                                 jComboBox1.removeAllItems();
                                 jComboBox1.addItem("Chat Principal");
@@ -109,7 +113,7 @@ public class Home extends javax.swing.JFrame {
                                        jComboBox1.addItem(usuario); 
                                     }
                                 }
-                                mostrarMensaje(mensaje);
+                                mostrarMensaje("Usuarios conectados: " + mensaje);
                             }
                             
                             
@@ -152,6 +156,7 @@ public class Home extends javax.swing.JFrame {
     private void mostrarMensaje(String mensaje) {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
+                
                 txtaConversation.append(mensaje + "\n");
             }
         });
@@ -174,7 +179,7 @@ public class Home extends javax.swing.JFrame {
                     String mensaje = "p^" + alias + "^" + jComboBox1.getSelectedItem().toString() + "^" + mensajeUsuario;
                     salidaCliente.writeUTF(mensaje);
                     txtfMessage.setText("");
-                    mostrarMensaje(mensaje);
+                    mostrarMensaje(alias + ": " + mensajeUsuario);
                 } catch(IOException e){
                     mostrarMensaje("Error al enviar mensaje al servidor: " + e.getMessage());
                 }
@@ -195,8 +200,6 @@ public class Home extends javax.swing.JFrame {
     }
     
     private void recibirArchivo( String nombreEmisor, String nombreArchivo, long tamanoArchivo) throws FileNotFoundException, IOException{
-        System.out.println("ENTRA a transferencia en Cliente");
-      
         
         JFileChooser selectorCarpeta = new JFileChooser();
         selectorCarpeta.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -213,9 +216,8 @@ public class Home extends javax.swing.JFrame {
 
                 // Notifica al usuario que se ha recibido el archivo
                 mostrarMensaje("Archivo recibido de " + nombreEmisor + ": " + archivo.getAbsolutePath());
-                System.out.println("Archivo recibido de " + nombreEmisor + ": " + archivo.getAbsolutePath());
             } catch (IOException e) {
-                e.printStackTrace();
+                mostrarMensaje(e.getMessage());
             }
 
         }
@@ -229,14 +231,13 @@ public class Home extends javax.swing.JFrame {
             File archivo = new File(path);
             FileInputStream fileInputStream = new FileInputStream(archivo);
             byte[] buffer = new byte[4096]; // Tamaño del búfer (4 KB)
-            System.out.println("Comienzo envio de archivo...");
+
             // Envía la señal de inicio de transferencia de archivo
             salidaCliente.writeUTF("f"); 
             salidaCliente.writeUTF(aliasDestino); // Envía el nombre del receptor
             salidaCliente.writeUTF(aliasRemitente); 
             salidaCliente.writeUTF(archivo.getName()); // Envía el nombre del archivo
             salidaCliente.writeLong(archivo.length()); // Envía el tamaño del archivo
-            System.out.println("Comienzo envio de archivo..." + archivo.getName());
             // Envía el contenido del archivo
             int count;
             while ((count = fileInputStream.read(buffer)) > 0) {
@@ -245,6 +246,7 @@ public class Home extends javax.swing.JFrame {
             salidaCliente.flush();
             fileInputStream.close();
             System.out.println("Archivo enviado");
+              mostrarMensaje("Se envio un archivo: " + archivo.getName());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -266,12 +268,13 @@ public class Home extends javax.swing.JFrame {
         txtaConversation = new javax.swing.JTextArea();
         btnEnviar = new javax.swing.JButton();
         jLabel1 = new javax.swing.JLabel();
-        jButton1 = new javax.swing.JButton();
-        jLabel2 = new javax.swing.JLabel();
+        btnEnviarArchivo = new javax.swing.JButton();
         jComboBox1 = new javax.swing.JComboBox<>();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle(this.getName());
+        setMaximumSize(new java.awt.Dimension(400, 400));
+        setSize(new java.awt.Dimension(400, 300));
 
         txtaConversation.setEditable(false);
         txtaConversation.setColumns(1);
@@ -288,14 +291,12 @@ public class Home extends javax.swing.JFrame {
 
         jLabel1.setText("o envia un archivo");
 
-        jButton1.setText("Elegir");
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
+        btnEnviarArchivo.setText("Elegir");
+        btnEnviarArchivo.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
+                btnEnviarArchivoActionPerformed(evt);
             }
         });
-
-        jLabel2.setText("jLabel2");
 
         jComboBox1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Chat Principal" }));
         jComboBox1.addActionListener(new java.awt.event.ActionListener() {
@@ -315,14 +316,12 @@ public class Home extends javax.swing.JFrame {
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(txtfMessage, javax.swing.GroupLayout.PREFERRED_SIZE, 272, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                            .addGroup(layout.createSequentialGroup()
+                                .addGap(6, 6, 6)
                                 .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 104, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(18, 18, 18)
-                                .addComponent(jButton1)
-                                .addGap(23, 23, 23)))
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(btnEnviar, javax.swing.GroupLayout.PREFERRED_SIZE, 1, Short.MAX_VALUE)
-                            .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(btnEnviarArchivo)))
+                        .addComponent(btnEnviar, javax.swing.GroupLayout.PREFERRED_SIZE, 1, Short.MAX_VALUE))
                     .addComponent(jComboBox1, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap(28, Short.MAX_VALUE))
         );
@@ -340,8 +339,7 @@ public class Home extends javax.swing.JFrame {
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel1)
-                    .addComponent(jButton1)
-                    .addComponent(jLabel2))
+                    .addComponent(btnEnviarArchivo))
                 .addGap(12, 12, 12))
         );
 
@@ -355,7 +353,7 @@ public class Home extends javax.swing.JFrame {
         
     }//GEN-LAST:event_btnEnviarActionPerformed
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+    private void btnEnviarArchivoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEnviarArchivoActionPerformed
         JFileChooser jFileChooser = new JFileChooser();
         String ruta = "";
         
@@ -369,14 +367,18 @@ public class Home extends javax.swing.JFrame {
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
-        }
-        jLabel2.setText(ruta);
-            
+        }            
         
-    }//GEN-LAST:event_jButton1ActionPerformed
+    }//GEN-LAST:event_btnEnviarArchivoActionPerformed
 
     private void jComboBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox1ActionPerformed
         txtaConversation.setText("");
+        //Para desactivar el boton de envio de archivos si se encuentra en el chat general
+        if(jComboBox1.getSelectedIndex()==0){
+         btnEnviarArchivo.setEnabled(false);
+        } else{
+            btnEnviarArchivo.setEnabled(true);
+        }
     }//GEN-LAST:event_jComboBox1ActionPerformed
 
     /**
@@ -423,10 +425,9 @@ public class Home extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnEnviar;
-    private javax.swing.JButton jButton1;
+    private javax.swing.JButton btnEnviarArchivo;
     private javax.swing.JComboBox<String> jComboBox1;
     private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTextArea txtaConversation;
     private javax.swing.JTextField txtfMessage;
