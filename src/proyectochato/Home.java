@@ -92,7 +92,7 @@ public class Home extends javax.swing.JFrame {
                                 }
                                 
                                 
-                            } else { // si el mensaje no empieza con m, entonces es una lista de usuarios
+                            } else if(mensaje.split(",").length > 0) { // si el mensaje no empieza con m, entonces es una lista de usuarios
                                 listaUsuarios = mensaje.split(",");
                                 jComboBox1.removeAllItems();
                                 jComboBox1.addItem("Chat Principal");
@@ -100,6 +100,11 @@ public class Home extends javax.swing.JFrame {
                                     if(!usuario.equals(alias)){
                                        jComboBox1.addItem(usuario); 
                                     }
+                                }
+                                mostrarMensaje(mensaje);
+                            } else{
+                                if (mensaje.startsWith("f^")) {
+                                    recibirArchivo(mensaje);
                                 }
                                 mostrarMensaje(mensaje);
                             }
@@ -174,6 +179,75 @@ public class Home extends javax.swing.JFrame {
             }
         }
     }
+    
+    private void enviarMensaje(String msg){
+        try{          
+            salidaCliente.writeUTF(msg);
+            txtfMessage.setText("");
+            mostrarMensaje(msg);
+        } catch(IOException e){
+            mostrarMensaje("Error al enviar mensaje al servidor: " + e.getMessage());
+        }
+    }
+    
+    private void recibirArchivo(String msg) throws FileNotFoundException, IOException{
+        System.out.println("ENTRA a transferencia en Cliente");
+
+        String nombreEmisor = entradaServidor.readUTF();
+        String nombreArchivo = entradaServidor.readUTF();
+        long tamanoArchivo = entradaServidor.readLong();
+        
+        JFileChooser selectorCarpeta = new JFileChooser();
+        selectorCarpeta.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        if(selectorCarpeta.showOpenDialog(this) == JFileChooser.APPROVE_OPTION){
+            
+            try (FileOutputStream fileOutputStream = new FileOutputStream(selectorCarpeta.getCurrentDirectory())) {
+                byte[] buffer = new byte[4096]; // Tamaño del búfer (4 KB)
+                int bytesRead;
+                long bytesRecibidos = 0;
+                while (bytesRecibidos < tamanoArchivo && (bytesRead = entradaServidor.read(buffer)) > 0) {
+                    fileOutputStream.write(buffer, 0, bytesRead);
+                    bytesRecibidos += bytesRead;
+                }
+
+                // Notifica al usuario que se ha recibido el archivo
+                System.out.println("Archivo recibido de " + nombreEmisor + ": " + nombreArchivo);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+    }
+    
+    public void enviaArchivo(String path, String aliasRemitente, String aliasDestino) throws IOException {
+          try {
+            // Lee el archivo desde la ruta especificada
+            
+            File archivo = new File(path);
+            FileInputStream fileInputStream = new FileInputStream(archivo);
+            byte[] buffer = new byte[4096]; // Tamaño del búfer (4 KB)
+            System.out.println("Comienzo envio de archivo...");
+            // Envía la señal de inicio de transferencia de archivo
+            salidaCliente.writeUTF("f^"); 
+            salidaCliente.writeUTF(aliasDestino); // Envía el nombre del receptor
+            salidaCliente.writeUTF(aliasRemitente); 
+            salidaCliente.writeUTF(archivo.getName()); // Envía el nombre del archivo
+            salidaCliente.writeLong(archivo.length()); // Envía el tamaño del archivo
+            System.out.println("Comienzo envio de archivo..." + archivo.getName());
+            // Envía el contenido del archivo
+            int count;
+            while ((count = fileInputStream.read(buffer)) > 0) {
+                salidaCliente.write(buffer, 0, count);
+            }
+            salidaCliente.flush();
+            fileInputStream.close();
+            System.out.println("Archivo enviado");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     
     
     /**
@@ -286,7 +360,13 @@ public class Home extends javax.swing.JFrame {
         int respuesta = jFileChooser.showOpenDialog(this);
         
         if(respuesta == JFileChooser.APPROVE_OPTION){
-            ruta = jFileChooser.getSelectedFile().getPath();
+            //File archivoSelect = jFileChooser.getSelectedFile();
+            ruta = jFileChooser.getSelectedFile().getAbsolutePath();
+            try {
+                enviaArchivo(ruta, alias, jComboBox1.getSelectedItem().toString());
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
         }
         jLabel2.setText(ruta);
             
