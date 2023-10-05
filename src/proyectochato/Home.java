@@ -82,12 +82,13 @@ public class Home extends javax.swing.JFrame {
                                 recibirArchivo(nombreEmisor, nombreArchivo, tamanoArchivo);
                                 
                             }
-                            if (mensaje.charAt(0) == 'm' || mensaje.charAt(0) == 'p'){
+                            if (mensaje.startsWith("m^")|| mensaje.startsWith("p^")){
                                 
                                 if(mensaje.charAt(0) == 'p'){
                                     StringTokenizer st = new StringTokenizer(mensaje, "^");
                                     String command = st.nextToken();
                                     String aliasR = st.nextToken();
+                                    
                                     //Para que solo muestre el mensaje si esta en la conversacion
                                     if(jComboBox1.getSelectedItem().toString().equals(aliasR)){
                                         mostrarMensaje(mensaje);
@@ -109,7 +110,8 @@ public class Home extends javax.swing.JFrame {
                                     }
                                 }
                                 mostrarMensaje(mensaje);
-                            } 
+                            }
+                            
                             
                         }
                     } catch (IOException e) {
